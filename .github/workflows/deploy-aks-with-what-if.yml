@@ -1,7 +1,12 @@
-name: AKS Deployment with WhatIf (Bicep)
+```yaml
+name: AKS Deployment (Bicep)
 
 on:
-  workflow_dispatch:   # 👈 manual trigger only
+  workflow_dispatch:   # 👈 manual run only
+
+env:
+  RESOURCE_GROUP: rg-aks-dev
+  LOCATION: centralus
 
 jobs:
 
@@ -15,13 +20,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install Azure CLI
-      run: |
-        curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-
     - name: Build Bicep
       run: |
         az bicep build --file infra/main.bicep
+
 
 # =========================
 # 2. WHAT-IF
@@ -39,12 +41,19 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+    - name: Ensure Resource Group exists
+      run: |
+        az group create \
+          --name $RESOURCE_GROUP \
+          --location $LOCATION
+
     - name: What-If Deployment
       run: |
         az deployment group what-if \
-          --resource-group rg-aks-dev \
+          --resource-group $RESOURCE_GROUP \
           --template-file infra/main.bicep \
           --parameters infra/params/dev.bicepparam
+
 
 # =========================
 # 3. DEPLOY
@@ -62,15 +71,10 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Create Resource Group
-      run: |
-        az group create \
-          --name rg-aks-dev \
-          --location centralus
-
     - name: Deploy AKS
       run: |
         az deployment group create \
-          --resource-group rg-aks-dev \
+          --resource-group $RESOURCE_GROUP \
           --template-file infra/main.bicep \
           --parameters infra/params/dev.bicepparam
+```
