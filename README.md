@@ -144,10 +144,8 @@ az deployment group create \
 
 ## ⚠️ Real-World Challenges Solved
 
-- Region typo issues  
 - VM SKU restrictions  
 - vCPU quota limitations  
-- Bicep syntax errors  
 
 ---
 
