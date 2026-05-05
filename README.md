@@ -35,6 +35,9 @@ AKS Cluster Provisioned
 
 ## 📁 Repository Structure
 
+<img width="225" height="272" alt="image" src="https://github.com/user-attachments/assets/00c06695-244b-4131-b57d-1325085a59ac" />
+
+
 github-aks-bicep/
 ├── .github/
 │   └── workflows/
