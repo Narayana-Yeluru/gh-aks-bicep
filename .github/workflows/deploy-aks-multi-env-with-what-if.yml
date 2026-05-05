@@ -1,0 +1,182 @@
+name: AKS Multi-Env Deployment (Bicep)
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+# =========================
+# VALIDATE
+# =========================
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build Bicep
+      run: az bicep build --file infra/main.bicep
+
+# =========================
+# DEV - WHATIF
+# =========================
+  dev-whatif:
+    runs-on: ubuntu-latest
+    needs: validate
+
+    env:
+      RG: rg-aks-dev-gh
+      LOCATION: centalus
+      PARAM_FILE: infra/params/dev.bicepparam
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Ensure RG
+      run: az group create --name $RG --location $LOCATION
+
+    - name: What-If (DEV)
+      run: |
+        az deployment group what-if \
+          --resource-group $RG \
+          --template-file infra/main.bicep \
+          --parameters $PARAM_FILE
+
+# =========================
+# DEV - DEPLOY
+# =========================
+  dev-deploy:
+    runs-on: ubuntu-latest
+    needs: dev-whatif
+
+    env:
+      RG: rg-aks-dev-gh
+      PARAM_FILE: infra/params/dev.bicepparam
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy (DEV)
+      run: |
+        az deployment group create \
+          --resource-group $RG \
+          --template-file infra/main.bicep \
+          --parameters $PARAM_FILE
+
+
+# =========================
+# TEST - WHATIF
+# =========================
+  test-whatif:
+    runs-on: ubuntu-latest
+    needs: dev-deploy
+
+    env:
+      RG: rg-aks-test-gh
+      LOCATION: cenralus
+      PARAM_FILE: infra/params/test.bicepparam
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Ensure RG
+      run: az group create --name $RG --location $LOCATION
+
+    - name: What-If (TEST)
+      run: |
+        az deployment group what-if \
+          --resource-group $RG \
+          --template-file infra/main.bicep \
+          --parameters $PARAM_FILE
+
+
+# =========================
+# TEST - DEPLOY
+# =========================
+  test-deploy:
+    runs-on: ubuntu-latest
+    needs: test-whatif
+
+    env:
+      RG: rg-aks-test-gh
+      PARAM_FILE: infra/params/test.bicepparam
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy (TEST)
+      run: |
+        az deployment group create \
+          --resource-group $RG \
+          --template-file infra/main.bicep \
+          --parameters $PARAM_FILE
+
+
+# =========================
+# PROD - WHATIF
+# =========================
+  prod-whatif:
+    runs-on: ubuntu-latest
+    needs: test-deploy
+
+    env:
+      RG: rg-aks-prod-gh
+      LOCATION: centralus
+      PARAM_FILE: infra/params/prod.bicepparam
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Ensure RG
+      run: az group create --name $RG --location $LOCATION
+
+    - name: What-If (PROD)
+      run: |
+        az deployment group what-if \
+          --resource-group $RG \
+          --template-file infra/main.bicep \
+          --parameters $PARAM_FILE
+
+
+# =========================
+# PROD - DEPLOY
+# =========================
+  prod-deploy:
+    runs-on: ubuntu-latest
+    needs: prod-whatif
+
+    env:
+      RG: rg-aks-prod-gh
+      PARAM_FILE: infra/params/prod.bicepparam
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy (PROD)
+      run: |
+        az deployment group create \
+          --resource-group $RG \
+          --template-file infra/main.bicep \
+          --parameters $PARAM_FILE
