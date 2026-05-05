@@ -4,8 +4,8 @@ on:
   workflow_dispatch:   # 👈 manual run only
 
 env:
-  RESOURCE_GROUP: rg-aks-dev
-  LOCATION: eastus
+  RESOURCE_GROUP: rg-aks-dev-gh
+  LOCATION: centralus
 
 jobs:
 
